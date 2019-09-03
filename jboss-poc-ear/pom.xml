@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <artifactId>jboss-poc-all</artifactId>
+      <groupId>de.poc.mv</groupId>
+      <version>1.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>jboss-poc-ear</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <packaging>ear</packaging>
+
+   <dependencies>
+      <dependency>
+		     <groupId>de.poc.mv</groupId>
+         <artifactId>jboss-poc-web</artifactId>
+		     <version>1.0-SNAPSHOT</version>
+         <type>war</type>
+     </dependency>
+     <dependency>
+		     <groupId>de.poc.mv</groupId>
+         <artifactId>jboss-poc-ejb</artifactId>
+		     <version>1.0-SNAPSHOT</version>
+         <type>ejb</type>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+      		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-ear-plugin</artifactId>
+				<configuration>
+					<version>1.3</version>
+					<defaultLibBundleDir>lib</defaultLibBundleDir>
+					<modules>
+						<ejbModule>
+							<groupId>de.poc.mv</groupId>
+							<artifactId>jboss-poc-ejb</artifactId>
+							<bundleFileName>jboss-poc-ejb.jar</bundleFileName>
+						</ejbModule>
+						<webModule>
+              <groupId>de.poc.mv</groupId>
+              <artifactId>jboss-poc-web</artifactId>
+              <bundleFileName>jboss-poc-web.war</bundleFileName>
+              <contextRoot>/jboss-poc-web</contextRoot>
+              </webModule>
+					</modules>
+					<earSourceDirectory>${basedir}/src/main/resources</earSourceDirectory>
+					<filtering>true</filtering>
+				</configuration>
+			</plugin>
+      </plugins>
+   </build>
+
+</project>
