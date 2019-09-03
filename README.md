@@ -1,7 +1,8 @@
-# This project is a small proof of concept which shows how to setup JBoss to use JWT Token validation for EJB, JMS and Servlet requests.
+# Proof of Concept: JBoss EJB SERVLETS JWT 
 
+### This project is a small proof of concept which shows how to setup JBoss to use JWT Token validation for EJB, JMS and Servlet requests.
 
-[Project structure]
+####Project structure
 
 - jboss-poc-client
   > Contains the implementation for the Elytron Client to request EJB, JMS and Servlet resources from the Server.
