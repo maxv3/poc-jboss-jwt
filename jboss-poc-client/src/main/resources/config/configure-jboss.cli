@@ -1,0 +1,90 @@
+# ----------------------------------------------------------------------------------------------------------------
+#
+# SUBSYSTEM ELYTRON
+#
+# ----------------------------------------------------------------------------------------------------------------
+# 
+# Configure the keystore, keymanager and ssl-context to use certificates
+------------------------------------------------------------------------------------------------------------------
+/subsystem=elytron/key-store=poc-server-key-store:add(type=JKS, credential-reference={clear-text=123456}, path=server.jks, relative-to=jboss.server.config.dir)
+
+/subsystem=elytron/key-manager=poc-server-key-manager:add(credential-reference={clear-text=123456}, key-store=poc-server-key-store)
+
+/subsystem=elytron/server-ssl-context=poc-server-ssl-context:add(key-manager=poc-server-key-manager, protocols=[TLSv1.2])
+
+# ------------------------------------------------------------------------------------------------------------------
+# Add the token realm for the JWT validation
+# ------------------------------------------------------------------------------------------------------------------
+/subsystem=elytron/token-realm=jwt-realm:add(principal-claim=sub, jwt={issuer=[https://your-issuer.com], audience=[your-audience], key-store=poc-server-key-store, certificate=JWT-CERT})
+
+# ------------------------------------------------------------------------------------------------------------------
+# Create a new role-mapper which will map all validated JWT Token user to a role
+# ------------------------------------------------------------------------------------------------------------------
+/subsystem=elytron/constant-role-mapper=jwt-user-mapper:add(roles=[POC-User])
+
+# ------------------------------------------------------------------------------------------------------------------
+# Create a new security-domain
+# ------------------------------------------------------------------------------------------------------------------
+/subsystem=elytron/security-domain=jwt-domain:add(default-realm=jwt-realm, permission-mapper=default-permission-mapper, realms=[{realm=jwt-realm, role-mapper=jwt-user-mapper}])
+
+# ------------------------------------------------------------------------------------------------------------------
+# Create a new http-authentication-factory which will be used for the undertow system (JBoss Webserver)
+# ------------------------------------------------------------------------------------------------------------------
+/subsystem=elytron/http-authentication-factory=jwt-http-authentication:add(security-domain=jwt-domain, http-server-mechanism-factory=global, mechanism-configurations=[{mechanism-name=BEARER_TOKEN, mechanism-realm-configurations=[{realm-name=jwt-realm}]}])
+
+# ------------------------------------------------------------------------------------------------------------------
+# Create a new sasl-authentication-factory which will be used for the ejb3 subsystem
+# ------------------------------------------------------------------------------------------------------------------
+/subsystem=elytron/sasl-authentication-factory=jwt-sasl-authentication:add(sasl-server-factory=configured, security-domain=jwt-domain, mechanism-configurations=[{mechanism-name=OAUTHBEARER, mechanism-realm-configurations=[{realm-name=jwt-realm}]}])
+
+ 
+# ----------------------------------------------------------------------------------------------------------------
+#
+# SUBSYSTEM EJB3
+#
+# ----------------------------------------------------------------------------------------------------------------
+#
+# Add a new security-domain for the ejb3 subsystem
+# ----------------------------------------------------------------------------------------------------------------
+/subsystem=ejb3/application-security-domain=EjbSecurityDomain:add(security-domain=jwt-domain)
+
+# ----------------------------------------------------------------------------------------------------------------
+# Configure the ejb3 subsystem to use the new security domain as default
+# ----------------------------------------------------------------------------------------------------------------
+/subsystem=ejb3:write-attribute(name=default-security-domain, value=EjbSecurityDomain)
+
+# ----------------------------------------------------------------------------------------------------------------
+# Update the remoting connector
+# ----------------------------------------------------------------------------------------------------------------
+/subsystem=ejb3/service=remote:write-attribute(name=connector-ref, value=https-remoting-connector)
+
+ /subsystem=ejb3/service=remote/channel-creation-options=KEEP_ALIVE:add(type=xnio, value=false)
+ 
+# ----------------------------------------------------------------------------------------------------------------
+#
+# SUBSYSTEM REMOTING
+#
+# ----------------------------------------------------------------------------------------------------------------
+#
+# Create a new remoting https-connector and configure the use of the sasl-authentication-factory for JWT tokens
+# ----------------------------------------------------------------------------------------------------------------
+/subsystem=remoting/http-connector=https-remoting-connector:add(connector-ref=https, sasl-authentication-factory=jwt-sasl-authentication)
+
+# ----------------------------------------------------------------------------------------------------------------
+# Remove the default http-connector
+# ----------------------------------------------------------------------------------------------------------------
+/subsystem=remoting/http-connector=http-remoting-connector:remove()
+
+ 
+# ----------------------------------------------------------------------------------------------------------------
+#
+# SUBSYSTEM UNDERTOW
+#
+# ----------------------------------------------------------------------------------------------------------------
+#
+# Configure the ssl-context for the undertow
+# ----------------------------------------------------------------------------------------------------------------
+/subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context, value=poc-server-ssl-context)
+/subsystem=undertow/application-security-domain=JwtSecurityDomain:add(http-authentication-factory=jwt-http-authentication)
+/subsystem=undertow/server=default-server/host=default-host/setting=http-invoker:add(http-authentication-factory=jwt-http-authentication)
