@@ -1,0 +1,7 @@
+de\poc\client\jms\JmsClient.class
+de\poc\jwt\JwtTokenDTO.class
+de\poc\AppLauncher.class
+de\poc\client\ejb\EjbClient.class
+de\poc\jwt\JwtTokenDecoder.class
+de\poc\jwt\JwtTokenDO.class
+de\poc\client\web\WebClient.class
